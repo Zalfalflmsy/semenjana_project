@@ -1,125 +1,224 @@
-import React from 'react';
-
 /**
- * @license qrcode.react
- * Copyright (c) Paul O'Shannessy
- * SPDX-License-Identifier: ISC
+ * Return array of browsers by selection queries.
+ *
+ * ```js
+ * browserslist('IE >= 10, IE 8') //=> ['ie 11', 'ie 10', 'ie 8']
+ * ```
+ *
+ * @param queries Browser queries.
+ * @param opts Options.
+ * @returns Array with browser names in Can I Use.
  */
+declare function browserslist(
+  queries?: string | readonly string[] | null,
+  opts?: browserslist.Options
+): string[]
 
-type ErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
-type CrossOrigin = 'anonymous' | 'use-credentials' | '' | undefined;
-type ImageSettings = {
-    /**
-     * The URI of the embedded image.
-     */
-    src: string;
-    /**
-     * The height, in pixels, of the image.
-     */
-    height: number;
-    /**
-     * The width, in pixels, of the image.
-     */
-    width: number;
-    /**
-     * Whether or not to "excavate" the modules around the embedded image. This
-     * means that any modules the embedded image overlaps will use the background
-     * color.
-     */
-    excavate: boolean;
-    /**
-     * The horiztonal offset of the embedded image, starting from the top left corner.
-     * Will center if not specified.
-     */
-    x?: number;
-    /**
-     * The vertical offset of the embedded image, starting from the top left corner.
-     * Will center if not specified.
-     */
-    y?: number;
-    /**
-     * The opacity of the embedded image in the range of 0-1.
-     * @defaultValue 1
-     */
-    opacity?: number;
-    /**
-     * The cross-origin value to use when loading the image. This is used to
-     * ensure compatibility with CORS, particularly when extracting image data
-     * from QRCodeCanvas.
-     * Note: `undefined` is treated differently than the seemingly equivalent
-     * empty string. This is intended to align with HTML behavior where omitting
-     * the attribute behaves differently than the empty string.
-     */
-    crossOrigin?: CrossOrigin;
-};
-type QRProps = {
-    /**
-     * The value to encode into the QR Code. An array of strings can be passed in
-     * to represent multiple segments to further optimize the QR Code.
-     */
-    value: string | string[];
-    /**
-     * The size, in pixels, to render the QR Code.
-     * @defaultValue 128
-     */
-    size?: number;
-    /**
-     * The Error Correction Level to use.
-     * @see https://www.qrcode.com/en/about/error_correction.html
-     * @defaultValue L
-     */
-    level?: ErrorCorrectionLevel;
-    /**
-     * The background color used to render the QR Code.
-     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
-     * @defaultValue #FFFFFF
-     */
-    bgColor?: string;
-    /**
-     * The foregtound color used to render the QR Code.
-     * @see https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
-     * @defaultValue #000000
-     */
-    fgColor?: string;
-    /**
-     * Whether or not a margin of 4 modules should be rendered as a part of the
-     * QR Code.
-     * @deprecated Use `marginSize` instead.
-     * @defaultValue false
-     */
-    includeMargin?: boolean;
-    /**
-     * The number of _modules_ to use for margin. The QR Code specification
-     * requires `4`, however you can specify any number. Values will be turned to
-     * integers with `Math.floor`. Overrides `includeMargin` when both are specified.
-     * @defaultValue 0
-     */
-    marginSize?: number;
-    /**
-     * The title to assign to the QR Code. Used for accessibility reasons.
-     */
-    title?: string;
-    /**
-     * The minimum version used when encoding the QR Code. Valid values are 1-40
-     * with higher values resulting in more complex QR Codes. The optimal
-     * (lowest) version is determined for the `value` provided, using `minVersion`
-     * as the lower bound.
-     * @defaultValue 1
-     */
-    minVersion?: number;
-    /**
-     * If enabled, the Error Correction Level of the result may be higher than
-     * the specified Error Correction Level option if it can be done without
-     * increasing the version.
-     * @defaultValue true
-     */
-    boostLevel?: boolean;
-    /**
-     * The settings for the embedded image.
-     */
-    imageSettings?: ImageSettings;
-};
-declare const QRCodeCanvas: React.ForwardRefExoticComponent<QRProps & React.CanvasHTMLAttributes<HTMLCanvasElement> & React.RefAttributes<HTMLCanvasElement>>;
-declare const QRCodeSVG: React.ForwardRefExoticComponent<QRProps & React.SVGAttributes<SVGSVGElement> & React.RefAttributes<SVGSVGElement>>;
+declare namespace browserslist {
+  interface Query {
+    compose: 'or' | 'and'
+    type: string
+    query: string
+    not?: true
+  }
 
-export { QRCodeCanvas, QRCodeSVG };
+  interface Options {
+    /**
+     * Path to processed file. It will be used to find config files.
+     */
+    path?: string | false
+    /**
+     * Processing environment. It will be used to take right queries
+     * from config file.
+     */
+    env?: string
+    /**
+     * Custom browser usage statistics for "> 1% in my stats" query.
+     */
+    stats?: Stats | string
+    /**
+     * Path to config file with queries.
+     */
+    config?: string
+    /**
+     * Do not throw on unknown version in direct query.
+     */
+    ignoreUnknownVersions?: boolean
+    /**
+     * Throw an error if env is not found.
+     */
+    throwOnMissing?: boolean
+    /**
+     * Disable security checks for extend query.
+     */
+    dangerousExtend?: boolean
+    /**
+     * Alias mobile browsers to the desktop version when Can I Use
+     * doesn’t have data about the specified version.
+     */
+    mobileToDesktop?: boolean
+  }
+
+  type Config = {
+    defaults: string[]
+    [section: string]: string[] | undefined
+  }
+
+  interface Stats {
+    [browser: string]: {
+      [version: string]: number
+    }
+  }
+
+  /**
+   * Browser names aliases.
+   */
+  let aliases: {
+    [alias: string]: string | undefined
+  }
+
+  /**
+   * Aliases to work with joined versions like `ios_saf 7.0-7.1`.
+   */
+  let versionAliases: {
+    [browser: string]:
+      | {
+          [version: string]: string | undefined
+        }
+      | undefined
+  }
+
+  /**
+   * Can I Use only provides a few versions for some browsers (e.g. `and_chr`).
+   *
+   * Fallback to a similar browser for unknown versions.
+   */
+  let desktopNames: {
+    [browser: string]: string | undefined
+  }
+
+  let data: {
+    [browser: string]:
+      | {
+          name: string
+          versions: string[]
+          released: string[]
+          releaseDate: {
+            [version: string]: number | undefined | null
+          }
+        }
+      | undefined
+  }
+
+  let nodeVersions: string[]
+
+  interface Usage {
+    [version: string]: number
+  }
+
+  let usage: {
+    global?: Usage
+    custom?: Usage | null
+    [country: string]: Usage | undefined | null
+  }
+
+  let cache: {
+    [feature: string]: {
+      [name: string]: {
+        [version: string]: string
+      }
+    }
+  }
+
+  /**
+   * Default browsers query
+   */
+  let defaults: readonly string[]
+
+  /**
+   * Which statistics should be used. Country code or custom statistics.
+   * Pass `"my stats"` to load statistics from `Browserslist` files.
+   */
+  type StatsOptions = string | 'my stats' | Stats | { dataByBrowser: Stats }
+
+  /**
+   * Return browsers market coverage.
+   *
+   * ```js
+   * browserslist.coverage(browserslist('> 1% in US'), 'US') //=> 83.1
+   * ```
+   *
+   * @param browsers Browsers names in Can I Use.
+   * @param stats Which statistics should be used.
+   * @returns Total market coverage for all selected browsers.
+   */
+  function coverage(browsers: readonly string[], stats?: StatsOptions): number
+
+  /**
+   * Get queries AST to analyze the config content.
+   *
+   * @param queries Browser queries.
+   * @param opts Options.
+   * @returns An array of the data of each query in the config.
+   */
+  function parse(
+    queries?: string | readonly string[] | null,
+    opts?: browserslist.Options
+  ): Query[]
+
+  /**
+   * Return queries for specific file inside the project.
+   *
+   * ```js
+   * browserslist.loadConfig({
+   *   file: process.cwd()
+   * }) ?? browserslist.defaults
+   * ```
+   */
+  function loadConfig(options: LoadConfigOptions): string[] | undefined
+
+  function clearCaches(): void
+
+  function parseConfig(string: string): Config
+
+  function readConfig(file: string): Config
+
+  function findConfig(...pathSegments: string[]): Config | undefined
+
+  function findConfigFile(...pathSegments: string[]): string | undefined
+
+  interface LoadConfigOptions {
+    /**
+     * Path to config file
+     * */
+    config?: string
+
+    /**
+     * Path to file inside the project to find Browserslist config
+     * in closest folder
+     */
+    path?: string
+
+    /**
+     * Environment to choose part of config.
+     */
+    env?: string
+  }
+}
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      BROWSERSLIST?: string
+      BROWSERSLIST_CONFIG?: string
+      BROWSERSLIST_DANGEROUS_EXTEND?: string
+      BROWSERSLIST_DISABLE_CACHE?: string
+      BROWSERSLIST_ENV?: string
+      BROWSERSLIST_IGNORE_OLD_DATA?: string
+      BROWSERSLIST_STATS?: string
+      BROWSERSLIST_ROOT_PATH?: string
+    }
+  }
+}
+
+export = browserslist

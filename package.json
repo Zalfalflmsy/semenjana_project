@@ -1,21 +1,15 @@
 {
-  "name": "caniuse-lite",
-  "version": "1.0.30001788",
-  "description": "A smaller version of caniuse-db, with only the essentials!",
-  "main": "dist/unpacker/index.js",
-  "files": [
-    "data",
-    "dist"
-  ],
+  "name": "browserslist",
+  "version": "4.28.2",
+  "description": "Share target browsers between different front-end tools, like Autoprefixer, Stylelint and babel-env-preset",
   "keywords": [
-    "support"
+    "browsers",
+    "caniuse",
+    "target"
   ],
-  "author": {
-    "name": "Ben Briggs",
-    "email": "beneb.info@gmail.com",
-    "url": "http://beneb.info"
-  },
-  "repository": "browserslist/caniuse-lite",
+  "license": "MIT",
+  "author": "Andrey Sitnik <andrey@sitnik.es>",
+  "repository": "browserslist/browserslist",
   "funding": [
     {
       "type": "opencollective",
@@ -23,12 +17,29 @@
     },
     {
       "type": "tidelift",
-      "url": "https://tidelift.com/funding/github/npm/caniuse-lite"
+      "url": "https://tidelift.com/funding/github/npm/browserslist"
     },
     {
       "type": "github",
       "url": "https://github.com/sponsors/ai"
     }
   ],
-  "license": "CC-BY-4.0"
+  "bin": {
+    "browserslist": "cli.js"
+  },
+  "browser": {
+    "./node.js": "./browser.js",
+    "path": false
+  },
+  "types": "./index.d.ts",
+  "dependencies": {
+    "baseline-browser-mapping": "^2.10.12",
+    "caniuse-lite": "^1.0.30001782",
+    "electron-to-chromium": "^1.5.328",
+    "node-releases": "^2.0.36",
+    "update-browserslist-db": "^1.2.3"
+  },
+  "engines": {
+    "node": "^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7"
+  }
 }
